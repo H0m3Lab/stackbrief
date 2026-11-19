@@ -1,0 +1,2 @@
+# Scripts and Dockerfiles run inside Linux containers: always LF, even on Windows checkouts
+* text=auto eol=lf

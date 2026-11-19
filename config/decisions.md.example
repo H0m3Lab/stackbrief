@@ -1,0 +1,11 @@
+# Standing decisions - the AI reads these on every review. Copy to decisions.md and edit.
+
+## Internet-facing apps (fix these first)
+- nginx-proxy-manager, vaultwarden, nextcloud
+
+## Rules
+- MariaDB stays on the 11.4 LTS line; 11.8 and newer majors are a planned migration -> Admin.
+- Postgres major upgrades (17 -> 18) -> Admin.
+- Immich server + machine-learning are always updated together, same version.
+- ghcr.io/immich-app/postgres is pinned by Immich; never update it separately -> Waiting.
+- WordPress: update the staging copy first, then production.

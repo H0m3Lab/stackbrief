@@ -1,0 +1,39 @@
+# Stackbrief - Powered by AI.  docker compose up -d --build
+services:
+  scanner:
+    build: ./scanner
+    image: stackbrief-scanner:local
+    container_name: stackbrief-scanner
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      GATEWAY_URL: http://gateway:8765
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock   # read containers, run Trivy/regctl (see docs/security.md)
+      - ./data:/data                                # reports/ and state/
+      - ./config:/config:ro                         # ignore-versions.txt
+    depends_on: [gateway]
+    networks: [stackbrief]
+    logging: {driver: json-file, options: {max-size: "5m", max-file: "3"}}
+
+  gateway:
+    build: ./gateway
+    image: stackbrief-gateway:local
+    container_name: stackbrief-gateway
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - gateway-data:/data                          # Claude home, workspace memory, call history
+      - ./jobs:/app/jobs:ro
+      - ./config/decisions.md:/data/workspace/decisions.md:ro
+    networks: [stackbrief]                          # no published ports: only the scanner talks to it
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    mem_limit: 2g
+    logging: {driver: json-file, options: {max-size: "5m", max-file: "3"}}
+
+volumes:
+  gateway-data:
+
+networks:
+  stackbrief:

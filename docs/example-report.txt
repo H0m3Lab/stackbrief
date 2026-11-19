@@ -1,0 +1,60 @@
+Subject: [Stackbrief] my-server 2026-11-19: 4 new version(s), 2 rebuild(s), 7 image(s) with fixable security issues - 5 new since last run
+
+Stackbrief for my-server - AI-reviewed. Nothing was changed.
+To start: paste everything from '==== AI ====' down to (not including) '==== Admin ====' into your AI coding agent.
+
+==== AI ====
+On my-server, do these one at a time. For each: snapshot or back up its data, read the release notes, update, test the app, update your docs. Stop and ask me if the release notes mention breaking changes.
+1. nginx-proxy-manager: 2.16.0 -> 2.17.1  [internet-facing, 8 critical CVEs in the old base image]
+2. vaultwarden: 1.37.4 -> 1.37.5  [internet-facing, 1 critical; release notes: invalid config values now stop startup]
+3. nextcloud-db (mariadb:11.4.13): pull + recreate newer build, stay on 11.4  [OS patches]
+4. uptime-kuma: 2.5.9 -> 2.5.12  [internal, 9 critical]
+5. myapp:local: rebuild from source on a fresh node:22 base  [internal, 10 high, all in the bundled npm]
+Back up, test and validate each change.
+
+==== Admin ====
+1. Postgres 17 -> 18 for app-db: planned major migration, decide when (the image layout changed in 18).
+
+==== Waiting ====
+- freescout: 6 critical in its own PHP libraries (symfony, swiftmailer), no newer image yet.
+- immich_postgres: pinned by Immich; fixed only through Immich releases.
+
+
+==================== Full report ====================
+
+Stackbrief update report for my-server. Nothing was changed.
+NEW = not in the previous report.
+
+== 1. NEWER VERSIONS AVAILABLE (4)
+  jc21/nginx-proxy-manager 2.16.0 -> 2.17.1  (nginx-proxy-manager)
+  NEW vaultwarden/server 1.37.4 -> 1.37.5  (vaultwarden)
+  NEW louislam/uptime-kuma 2.5.9 -> 2.5.12  (uptime-kuma)
+  postgres 17.11-alpine -> 17.12-alpine (new major 18.7-alpine also out - planned migration, not urgent)  (app-db)
+
+== 2. NEWER BUILD OF THE SAME VERSION (2)
+  mariadb:11.4.13  has a newer build upstream (same version, usually OS/security patches) -> pull + recreate  (nextcloud-db)
+  NEW valkey/valkey:9  has a newer build upstream (same version, usually OS/security patches) -> pull + recreate  (immich_redis)
+
+== 3. SECURITY: HIGH,CRITICAL WITH A FIX AVAILABLE (7 images)
+   (a fix usually arrives through item 1 or 2; if neither lists the app, its maintainers haven't shipped one yet)
+  jc21/nginx-proxy-manager:2.16.0 (nginx-proxy-manager): 8 critical, 229 high
+      critical: CVE-2026-111497 in libbrotli1
+      critical: CVE-2026-119618 in apache2-utils
+      critical: CVE-2026-59873 in tar
+      ... 5 more critical
+      packages: lang-pkgs basic-ftp,brace-expansion,undici; os-pkgs apache2-utils,libbrotli1,tar,...
+  vaultwarden/server:1.37.4 (vaultwarden): 1 critical, 44 high
+      critical: CVE-2026-111497 in libbrotli1
+      packages: os-pkgs apt,libapt-pkg7.0,libbrotli1,libpq5,zlib1g
+  myapp:local (myapp): 0 critical, 10 high, 2 new
+      packages: lang-pkgs @fastify/static,brace-expansion,ip-address,pacote,picomatch,sigstore
+  ...
+
+== Up to date, no fixable findings
+  clamav/clamav:1.5.5
+  wordpress:7.1.5-php8.3-apache
+
+== Notes
+  myapp:local (myapp): built locally; version check skipped, security scan below
+
+-- Stackbrief scan, 2026-11-19 07:21:24 EST. Full findings: reports/2026-11-19-security.txt

@@ -1,0 +1,3 @@
+# One repository per line (without tag) whose version check should be skipped,
+# e.g. images pinned by another app. Security scans still run.
+ghcr.io/immich-app/postgres

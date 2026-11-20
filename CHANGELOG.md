@@ -6,6 +6,11 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- `## Brief instructions` in `decisions.md` replaces the first line of the AI section, so the
+  wording can be changed without editing the tracked job file.
+- `compose.override.yaml` is git-ignored and documented for local paths and networks.
+
 ## [0.1.0] - 2026-11-19
 
 First public release.

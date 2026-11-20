@@ -108,6 +108,23 @@ All settings are in `.env` (see `.env.example`): schedule, host name, notifiers 
 `webhook`, `stdout`; several at once), severity, report retention, heartbeat URL, model.
 Jobs are plain Markdown in `jobs/`; edit `jobs/update-review.md` to change how items are sorted
 or the wording of the brief.
+To change only the instruction line your agent reads first, add a `## Brief instructions`
+section to `config/decisions.md` (see the example file); that keeps `git pull` conflict-free.
+
+**Local changes to the containers** (extra networks, storing data elsewhere, reaching a heartbeat
+monitor on another Docker network) go in `compose.override.yaml`, which is git-ignored and picked up
+automatically by `docker compose`. For example:
+
+```yaml
+services:
+  scanner:
+    volumes: [/srv/appdata/stackbrief/data:/data]
+    networks: [stackbrief, monitoring]     # e.g. so HEARTBEAT_URL can use http://uptime-kuma:3001/...
+  gateway:
+    volumes: [/srv/appdata/stackbrief/gateway:/data]   # directory owned by uid 1000
+networks:
+  monitoring: {external: true}
+```
 
 ## Limits
 

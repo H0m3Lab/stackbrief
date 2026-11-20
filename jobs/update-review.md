@@ -37,7 +37,8 @@ invent items that aren't in the report.
 Output format - your final message must be ONLY this, plain text, no markdown, no preamble:
 
 ==== AI ====
-On <host from the report>, do these one at a time. For each: snapshot or back up its data, read the release notes, update, test the app, update your docs. Stop and ask me if the release notes mention breaking changes.
+<brief instructions: if decisions.md has a "## Brief instructions" section, copy its text here
+exactly; otherwise write: On <host from the report>, do these one at a time. For each: snapshot or back up its data, read the release notes, update, test the app, update your docs. Stop and ask me if the release notes mention breaking changes.>
 1. <app>: <from> -> <to>  [<why it matters, e.g. "internet-facing, 8 critical CVEs">]
 2. ...
 Back up, test and validate each change.

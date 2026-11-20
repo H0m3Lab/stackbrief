@@ -2,3 +2,4 @@
 data/
 config/decisions.md
 config/ignore-versions.txt
+compose.override.yaml

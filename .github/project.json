@@ -1,0 +1,21 @@
+{
+  "name": "Stackbrief - Powered by AI",
+  "slug": "stackbrief",
+  "tagline": "A daily Docker update and CVE report, turned into a ready-to-act brief.",
+  "description": "Stackbrief checks every running container for newer versions, rebuilt images and fixable vulnerabilities, then has an AI sort the findings into what an agent can do, what needs you, and what nobody can fix yet. It never changes anything on its own.",
+  "status": "early",
+  "features": [
+    "Version checks that respect each image's tag style",
+    "Rebuilt-image detection",
+    "Fixable HIGH/CRITICAL CVEs via Trivy",
+    "AI / Admin / Waiting brief driven by your own rules",
+    "Email, ntfy, webhook or stdout delivery",
+    "AI isolated from the host: no shell, no Docker socket"
+  ],
+  "stack": ["Bash", "Node.js", "Trivy", "regclient", "Claude Code", "Docker"],
+  "repository": "https://github.com/H0m3Lab/stackbrief",
+  "documentation": "https://github.com/H0m3Lab/stackbrief#readme",
+  "changelog": "https://github.com/H0m3Lab/stackbrief/blob/main/CHANGELOG.md",
+  "license": "MIT",
+  "screenshots": []
+}

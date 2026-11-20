@@ -116,6 +116,25 @@ or the wording of the brief.
 - Trivy's `--ignore-unfixed` is used: only vulnerabilities that already have a fix are reported.
 - The AI can be wrong. It sorts and explains; *you* (and your agent session) verify before changing anything.
 
+## Troubleshooting
+
+- **The brief has no AI sections, only the plain report:** the line at the top says why. Usually the AI
+  login (`ANTHROPIC_API_KEY` / `CLAUDE_CODE_OAUTH_TOKEN`) or `GATEWAY_KEY` (at least 32 characters, same
+  value for both containers). Check `docker compose logs gateway`.
+- **The first scan is very slow:** Trivy downloads its database and scans each image once; later runs
+  are faster.
+- **Version checks fail for Docker Hub images:** regctl uses anonymous access, so Docker Hub's rate
+  limits apply; the scanner retries once. Run the scan at a quiet time, away from big pulls.
+- **Nothing arrives by email:** test delivery with `NOTIFY=stdout`, then check the SMTP settings (TLS is required).
+- **The gateway can't read `decisions.md`:** it runs as a non-root user; `chmod 644 config/decisions.md`.
+
+## Releases and contributing
+
+Versions and changes: [Releases](https://github.com/H0m3Lab/stackbrief/releases) and [CHANGELOG.md](CHANGELOG.md).
+Developer and AI-agent guide: [CLAUDE.md](CLAUDE.md). Bug reports and ideas are welcome as issues; see the
+[contribution guide](https://github.com/H0m3Lab/.github/blob/main/CONTRIBUTING.md). Report security
+problems privately through the **Security** tab.
+
 ## License
 
 MIT - see [LICENSE](LICENSE). Stackbrief uses [Claude Code](https://claude.com/claude-code) by

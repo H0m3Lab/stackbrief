@@ -54,44 +54,41 @@ A full example message is in [docs/example-report.txt](docs/example-report.txt).
 - **Scanner:** a small shell job. Version logic stays within the tag style you use
   (`v1.2.3`, `1.2.3-alpine`, linuxserver `-lsNNN`...). Same-major bumps are actionable;
   a newer major is only mentioned as a planned migration. It marks findings that are NEW since the last run.
-- **Claude gateway** ([gateway/](gateway/README.md)): Claude Code in headless mode behind an internal
-  HTTP API with per-job instructions. **We recommend running it as its own container, separate from
-  Stackbrief**, so your other self-hosted apps can use the same Claude for their own jobs. It keeps
-  its own notes (`memory/`), so it learns your setup's recurring quirks over time. Stackbrief is just one
-  of its users (job `update-review`).
-- **Your rules:** `gateway/decisions.md`, in plain language. For example: which apps are
+- **Claude gateway** ([H0m3Lab/claude-gateway](https://github.com/H0m3Lab/claude-gateway), a separate project): Claude Code in headless
+  mode behind an internal HTTP API with per-job instructions. **Run it as its own container**, so your
+  other self-hosted apps can use the same Claude for their own jobs. It keeps its own notes (`memory/`),
+  so it learns your setup's recurring quirks over time. Stackbrief is just one of its users (job
+  `update-review`, shipped here in [jobs/](jobs/update-review.md)).
+- **Your rules:** the gateway's `decisions.md`, in plain language. For example: which apps are
   internet-facing, "MariaDB stays on 11.4 LTS", "staging before production".
 - **Fallback:** if the AI is unreachable or returns something odd, you still get the plain
   report, with one line saying why.
 
 ## Quick start
 
+1. **The Claude gateway** (skip if you already run it): install
+   [H0m3Lab/claude-gateway](https://github.com/H0m3Lab/claude-gateway#install). It's a separate container that your other apps can use too.
+2. **Stackbrief:**
+
 ```bash
 git clone https://github.com/H0m3Lab/stackbrief.git && cd stackbrief
-
-# 1. the Claude gateway: its own container, shared with your other apps (skip if you already run it)
-cd gateway
-cp .env.example .env && chmod 600 .env                          # GATEWAY_KEY + an AI login
-cp decisions.md.example decisions.md && chmod 644 decisions.md  # your rules; the AI reads it as a non-root user
-docker compose up -d --build
-cd ..
-
-# 2. Stackbrief
-cp .env.example .env && chmod 600 .env          # the same GATEWAY_KEY, NOTIFY, schedule
+cp jobs/update-review.md ../claude-gateway/jobs/   # Stackbrief's job, into the gateway's jobs/ folder
+cp .env.example .env && chmod 600 .env             # the gateway's GATEWAY_KEY, NOTIFY, schedule
 cp config/ignore-versions.txt.example config/ignore-versions.txt
 docker compose up -d --build
-docker compose run --rm scanner scan --no-notify  # first scan now, printed to the terminal
+docker compose run --rm scanner scan --no-notify   # first scan now, printed to the terminal
 ```
 
-Already running a Claude gateway somewhere else? Set `GATEWAY_URL` and `GATEWAY_NETWORK` in `.env`,
-and copy `gateway/jobs/update-review.md` into that gateway's `jobs/` folder.
+Add Stackbrief's rules to the gateway's `decisions.md`: which apps are internet-facing, version lines you
+stay on, and optionally the first line of the brief. See [docs/decisions-example.md](docs/decisions-example.md).
+The scanner reaches the gateway at `http://claude:8765` on the Docker network `claude`; if yours is
+elsewhere, set `GATEWAY_URL` and `GATEWAY_NETWORK` in `.env`. After updating Stackbrief, copy
+`jobs/update-review.md` into the gateway again.
 
 The first run takes a while (Trivy downloads its database; roughly 30-60 s per image).
 After that it runs daily at `SCHEDULE`.
 
-**AI login** (in `gateway/.env`): set `ANTHROPIC_API_KEY` (pay per use), or `CLAUDE_CODE_OAUTH_TOKEN` from
-`claude setup-token` if you use a Claude subscription. Check Anthropic's terms for your plan
-before using it for unattended automation. A daily review is one short request.
+The AI login (API key or Claude subscription token) is set in the gateway. A daily review is one short request.
 
 Reports are kept in `data/reports/` (`YYYY-MM-DD.txt`, `-review.txt`, `-security.txt` with every finding).
 
@@ -122,11 +119,11 @@ version checks still track the official image, and the AI suggests rebuilds when
 
 All settings are in `.env` (see `.env.example`): schedule, host name, notifiers (`smtp`, `ntfy`,
 `webhook`, `stdout`; several at once), severity, report retention, heartbeat URL, gateway address.
-The AI login and model are in `gateway/.env`.
-Jobs are plain Markdown in `gateway/jobs/`; edit `update-review.md` to change how items are sorted
-or the wording of the brief.
+The AI login and model are set in the gateway.
+The review job is plain Markdown ([jobs/update-review.md](jobs/update-review.md)); edit your copy in the
+gateway's `jobs/` folder to change how items are sorted or the wording of the brief.
 To change only the instruction line your agent reads first, add a `## Brief instructions`
-section to `gateway/decisions.md` (see the example file); that keeps `git pull` conflict-free.
+section to the gateway's `decisions.md` (see [docs/decisions-example.md](docs/decisions-example.md)).
 
 **Local changes to the containers** (extra networks, storing data elsewhere, reaching a heartbeat
 monitor on another Docker network) go in `compose.override.yaml`, which is git-ignored and picked up
@@ -152,16 +149,15 @@ networks:
 
 - **The brief has no AI sections, only the plain report:** the line at the top says why. Usually the AI
   login (`ANTHROPIC_API_KEY` / `CLAUDE_CODE_OAUTH_TOKEN`) or `GATEWAY_KEY` (at least 32 characters, same
-  value in `.env` and `gateway/.env`), or the scanner can't reach the gateway (`GATEWAY_URL`,
-  `GATEWAY_NETWORK`). Check `docker logs claude`.
+  value here and in the gateway), the gateway has no `update-review` job, or the scanner can't reach the
+  gateway (`GATEWAY_URL`, `GATEWAY_NETWORK`). Check `docker logs claude`.
 - **The first scan is very slow:** Trivy downloads its database and scans each image once; later runs
   are faster.
 - **Version checks fail for Docker Hub images:** regctl uses anonymous access, so Docker Hub's rate
   limits apply; the scanner retries once. Run the scan at a quiet time, away from big pulls.
 - **Nothing arrives by email:** test delivery with `NOTIFY=stdout`, then check the SMTP settings (TLS is required).
-- **The gateway can't read `decisions.md`:** it runs as a non-root user; `chmod 644 gateway/decisions.md`.
-- **`network claude declared as external, but could not be found`:** start the gateway first
-  (`cd gateway && docker compose up -d`), or set `GATEWAY_NETWORK` to the network your gateway is on.
+- **`network claude declared as external, but could not be found`:** start the gateway first, or set
+  `GATEWAY_NETWORK` to the network your gateway is on.
 
 ## Releases and contributing
 

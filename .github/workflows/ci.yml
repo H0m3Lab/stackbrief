@@ -23,15 +23,10 @@ jobs:
           persist-credentials: false
       - name: ShellCheck
         run: docker run --rm -v "$PWD:/m:ro" koalaman/shellcheck:v0.10.0 -S warning /m/scanner/scan.sh /m/scanner/entrypoint.sh
-      - name: Gateway syntax
-        run: node --check gateway/server.js
       - name: Compose file is valid
         run: |
           cp .env.example .env
           docker compose config --quiet
-          cp gateway/.env.example gateway/.env
-          cp gateway/decisions.md.example gateway/decisions.md
-          docker compose -f gateway/compose.yaml config --quiet
 
   docker:
     name: Docker build
@@ -42,7 +37,6 @@ jobs:
         with:
           persist-credentials: false
       - run: docker build -t stackbrief-scanner:ci scanner
-      - run: docker build -t claude-gateway:ci gateway
 
   secrets:
     name: Secret scan

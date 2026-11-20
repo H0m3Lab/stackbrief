@@ -12,7 +12,7 @@
     "Email, ntfy, webhook or stdout delivery",
     "AI isolated from the host: no shell, no Docker socket"
   ],
-  "stack": ["Bash", "Node.js", "Trivy", "regclient", "Claude Code", "Docker"],
+  "stack": ["Bash", "Trivy", "regclient", "Claude Code (via claude-gateway)", "Docker"],
   "repository": "https://github.com/H0m3Lab/stackbrief",
   "documentation": "https://github.com/H0m3Lab/stackbrief#readme",
   "changelog": "https://github.com/H0m3Lab/stackbrief/blob/main/CHANGELOG.md",

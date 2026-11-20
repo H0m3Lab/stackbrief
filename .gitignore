@@ -1,6 +1,4 @@
 .env
 data/
-gateway/.env
-gateway/decisions.md
 config/ignore-versions.txt
 compose.override.yaml

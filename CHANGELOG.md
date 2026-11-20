@@ -7,15 +7,14 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Changed
-- **The Claude gateway is now its own shared service** (`gateway/compose.yaml`, container `claude`,
-  network `claude`) instead of a second container inside Stackbrief. Your other self-hosted apps can use
-  the same Claude, with one memory, through `POST /ask`; see [gateway/README.md](gateway/README.md).
-  Stackbrief's `compose.yaml` now runs only the scanner and reaches the gateway via `GATEWAY_URL`
-  (default `http://claude:8765`) on `GATEWAY_NETWORK` (default `claude`).
-- Moved: `jobs/update-review.md` -> `gateway/jobs/`, `config/decisions.md` -> `gateway/decisions.md`;
-  the AI login moved from `.env` to `gateway/.env`.
-  **Upgrading:** `docker compose down`, move those files and the login lines, start `gateway/` first, then
-  Stackbrief. To keep the old gateway's memory, copy the old `gateway-data` volume into the new `claude-data` one.
+- **The Claude gateway is now its own project, [H0m3Lab/claude-gateway](https://github.com/H0m3Lab/claude-gateway)**: one shared Claude
+  container that your other self-hosted apps can use too, with one memory. Stackbrief runs only the scanner
+  and reaches the gateway via `GATEWAY_URL` (default `http://claude:8765`) on `GATEWAY_NETWORK`
+  (default `claude`). Its review job ships as `jobs/update-review.md`, copied into the gateway's `jobs/`.
+- **Upgrading from 0.1.0:** `docker compose down`; install claude-gateway with your AI login, `GATEWAY_KEY`
+  and `decisions.md` (from `config/decisions.md`); copy `jobs/update-review.md` into its `jobs/`; remove the
+  AI login lines from Stackbrief's `.env`; `docker compose up -d --build`. To keep the AI's memory, copy
+  the old `gateway-data` volume's contents into the gateway's `claude-data` volume.
 
 ### Added
 - `## Brief instructions` in `decisions.md` replaces the first line of the AI section, so the

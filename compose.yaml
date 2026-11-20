@@ -1,6 +1,6 @@
 # Stackbrief - Powered by AI.  docker compose up -d --build
-# The AI review comes from a Claude gateway: run the one in gateway/ first (a shared service your
-# other apps can use too), or point GATEWAY_URL / GATEWAY_NETWORK at one you already have.
+# The AI review comes from the Claude gateway, a separate shared service your other apps can use too:
+# https://github.com/H0m3Lab/claude-gateway (start it first, and copy jobs/update-review.md into its jobs/ folder).
 services:
   scanner:
     build: ./scanner

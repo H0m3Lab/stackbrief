@@ -7,7 +7,7 @@ on Alpine with curl, jq and the Docker CLI. It never starts, stops or changes yo
 containers it runs are short-lived `regclient/regctl` and `aquasec/trivy` (pinned tags in `.env`).
 
 ## The AI has nothing that can act
-The gateway runs Claude Code with `--tools Read,Write,Edit,Glob,Grep`, working directory = its own
+The [Claude gateway](https://github.com/H0m3Lab/claude-gateway) runs Claude Code with `--tools Read,Write,Edit,Glob,Grep`, working directory = its own
 workspace volume. No Bash, no web fetch, no Docker socket, no host mounts, no published ports,
 all capabilities dropped, `no-new-privileges`. The worst a hostile string in a report could do is
 make the AI write a misleading brief, which is why the brief is advice that you read before acting.
@@ -27,5 +27,5 @@ port or put it behind a reverse proxy.
 
 ## Updating Stackbrief itself
 The scanner reports on its own container and the gateway's too, so you'll see when an image needs a
-rebuild (`docker compose build --pull && docker compose up -d`, in the repository folder and in `gateway/`). The Claude Code version is pinned with the
+rebuild (`docker compose build --pull && docker compose up -d`, here and in the gateway's folder). The Claude Code version is pinned with the
 build arg `CLAUDE_CODE_VERSION`.

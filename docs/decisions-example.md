@@ -1,4 +1,4 @@
-# Standing decisions - the AI reads these on every job. Copy to gateway/decisions.md and edit.
+# Stackbrief rules for the Claude gateway's decisions.md. Add these sections there and edit them.
 
 ## Internet-facing apps (fix these first)
 - nginx-proxy-manager, vaultwarden, nextcloud

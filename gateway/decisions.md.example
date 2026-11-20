@@ -1,4 +1,4 @@
-# Standing decisions - the AI reads these on every review. Copy to decisions.md and edit.
+# Standing decisions - the AI reads these on every job. Copy to gateway/decisions.md and edit.
 
 ## Internet-facing apps (fix these first)
 - nginx-proxy-manager, vaultwarden, nextcloud

@@ -1,0 +1,28 @@
+# Claude gateway: Claude Code (headless) as one shared service for your self-hosted apps.
+#   cd gateway && cp .env.example .env && chmod 600 .env
+#   cp decisions.md.example decisions.md && chmod 644 decisions.md
+#   docker compose up -d --build
+# Apps on the "claude" network call http://claude:8765/ask. Stackbrief is one of them; see README.md.
+services:
+  claude:
+    build: .
+    image: claude-gateway:local
+    container_name: claude
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - claude-data:/data                           # Claude home, workspace memory, call history
+      - ./jobs:/app/jobs:ro                         # one <job>.md instruction file per job
+      - ./decisions.md:/data/workspace/decisions.md:ro
+    networks: [claude]                              # no published ports: only apps on this network
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    mem_limit: 2g
+    logging: {driver: json-file, options: {max-size: "5m", max-file: "3"}}
+
+volumes:
+  claude-data:
+
+networks:
+  claude:
+    name: claude

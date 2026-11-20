@@ -13,9 +13,10 @@ all capabilities dropped, `no-new-privileges`. The worst a hostile string in a r
 make the AI write a misleading brief, which is why the brief is advice that you read before acting.
 
 ## The gateway key
-Only the scanner can call the gateway: every `/ask` needs `Authorization: Bearer $GATEWAY_KEY`
-(at least 32 characters, compared in constant time). The gateway is only on the internal
-`stackbrief` network. Don't publish its port or put it behind a reverse proxy.
+The gateway is a shared service, so only apps you put on its Docker network (`claude`) can reach it,
+and every `/ask` needs `Authorization: Bearer $GATEWAY_KEY` (at least 32 characters, compared in
+constant time). Give the key only to apps you trust to spend your AI quota. Don't publish its
+port or put it behind a reverse proxy.
 
 ## What leaves your network
 - To registries: image names (tag listings and digests).
@@ -25,6 +26,6 @@ Only the scanner can call the gateway: every `/ask` needs `Authorization: Bearer
 - To your notifier: the brief.
 
 ## Updating Stackbrief itself
-The scanner reports on its own containers too, so you'll see when the gateway image needs a rebuild
-(`docker compose build --pull && docker compose up -d`). The Claude Code version is pinned with the
+The scanner reports on its own container and the gateway's too, so you'll see when an image needs a
+rebuild (`docker compose build --pull && docker compose up -d`, in the repository folder and in `gateway/`). The Claude Code version is pinned with the
 build arg `CLAUDE_CODE_VERSION`.

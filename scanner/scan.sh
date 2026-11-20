@@ -16,7 +16,7 @@ TRIVY_IMG=${TRIVY_IMAGE:-aquasec/trivy:0.76.2}
 TRIVY_CACHE=${TRIVY_CACHE_VOLUME:-stackbrief-trivy-cache}
 SEVERITY=${SEVERITY:-HIGH,CRITICAL}
 KEEP_DAYS=${REPORT_KEEP_DAYS:-60}
-GATEWAY_URL=${GATEWAY_URL:-http://gateway:8765}
+GATEWAY_URL=${GATEWAY_URL:-http://claude:8765}
 TODAY=$(date +%F)
 mkdir -p "$D/reports" "$D/state"
 WORK=$(mktemp -d); trap 'rm -rf "$WORK"' EXIT

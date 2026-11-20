@@ -28,8 +28,10 @@ jobs:
       - name: Compose file is valid
         run: |
           cp .env.example .env
-          cp config/decisions.md.example config/decisions.md
           docker compose config --quiet
+          cp gateway/.env.example gateway/.env
+          cp gateway/decisions.md.example gateway/decisions.md
+          docker compose -f gateway/compose.yaml config --quiet
 
   docker:
     name: Docker build
@@ -40,7 +42,7 @@ jobs:
         with:
           persist-credentials: false
       - run: docker build -t stackbrief-scanner:ci scanner
-      - run: docker build -t stackbrief-gateway:ci gateway
+      - run: docker build -t claude-gateway:ci gateway
 
   secrets:
     name: Secret scan

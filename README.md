@@ -39,11 +39,13 @@ A full example message is in [docs/example-report.txt](docs/example-report.txt).
 ## How it works
 
 ```
- ┌──────────── scanner (daily) ────────────┐        ┌──────── gateway ────────┐
+ ┌──────────── scanner (daily) ────────────┐        ┌─── Claude gateway ──────┐
  │ docker ps → every image you run          │ report │ Claude Code, headless   │
  │ regctl   → newer tags, rebuilt digests   │ ─────► │ job: update-review      │
  │ Trivy    → HIGH/CRITICAL CVEs with fixes │ ◄───── │ + your decisions.md     │
  └──────────────┬──────────────────────────┘ review │ + its own memory        │
+                │                                    │ (shared: other apps can │
+                │                                    │  send it jobs too)      │
                 │                                    └─────────────────────────┘
                 ▼
      email / ntfy / webhook / stdout:  AI · Admin · Waiting  +  full report
@@ -52,9 +54,12 @@ A full example message is in [docs/example-report.txt](docs/example-report.txt).
 - **Scanner:** a small shell job. Version logic stays within the tag style you use
   (`v1.2.3`, `1.2.3-alpine`, linuxserver `-lsNNN`...). Same-major bumps are actionable;
   a newer major is only mentioned as a planned migration. It marks findings that are NEW since the last run.
-- **Gateway:** Claude Code in headless mode behind an internal HTTP API with per-job instructions.
-  It keeps its own notes (`memory/`), so it learns your stack's recurring quirks over time.
-- **Your rules:** `config/decisions.md`, in plain language. For example: which apps are
+- **Claude gateway** ([gateway/](gateway/README.md)): Claude Code in headless mode behind an internal
+  HTTP API with per-job instructions. **We recommend running it as its own container, separate from
+  Stackbrief**, so your other self-hosted apps can use the same Claude for their own jobs. It keeps
+  its own notes (`memory/`), so it learns your setup's recurring quirks over time. Stackbrief is just one
+  of its users (job `update-review`).
+- **Your rules:** `gateway/decisions.md`, in plain language. For example: which apps are
   internet-facing, "MariaDB stays on 11.4 LTS", "staging before production".
 - **Fallback:** if the AI is unreachable or returns something odd, you still get the plain
   report, with one line saying why.
@@ -63,17 +68,28 @@ A full example message is in [docs/example-report.txt](docs/example-report.txt).
 
 ```bash
 git clone https://github.com/H0m3Lab/stackbrief.git && cd stackbrief
-cp .env.example .env && chmod 600 .env          # set GATEWAY_KEY, an AI login, NOTIFY
-cp config/decisions.md.example config/decisions.md && chmod 644 config/decisions.md   # the AI reads it as a non-root user
+
+# 1. the Claude gateway: its own container, shared with your other apps (skip if you already run it)
+cd gateway
+cp .env.example .env && chmod 600 .env                          # GATEWAY_KEY + an AI login
+cp decisions.md.example decisions.md && chmod 644 decisions.md  # your rules; the AI reads it as a non-root user
+docker compose up -d --build
+cd ..
+
+# 2. Stackbrief
+cp .env.example .env && chmod 600 .env          # the same GATEWAY_KEY, NOTIFY, schedule
 cp config/ignore-versions.txt.example config/ignore-versions.txt
 docker compose up -d --build
 docker compose run --rm scanner scan --no-notify  # first scan now, printed to the terminal
 ```
 
+Already running a Claude gateway somewhere else? Set `GATEWAY_URL` and `GATEWAY_NETWORK` in `.env`,
+and copy `gateway/jobs/update-review.md` into that gateway's `jobs/` folder.
+
 The first run takes a while (Trivy downloads its database; roughly 30-60 s per image).
 After that it runs daily at `SCHEDULE`.
 
-**AI login:** set `ANTHROPIC_API_KEY` (pay per use), or `CLAUDE_CODE_OAUTH_TOKEN` from
+**AI login** (in `gateway/.env`): set `ANTHROPIC_API_KEY` (pay per use), or `CLAUDE_CODE_OAUTH_TOKEN` from
 `claude setup-token` if you use a Claude subscription. Check Anthropic's terms for your plan
 before using it for unattended automation. A daily review is one short request.
 
@@ -81,13 +97,13 @@ Reports are kept in `data/reports/` (`YYYY-MM-DD.txt`, `-review.txt`, `-security
 
 ## Security model
 
-The two containers deliberately have very different powers:
+The scanner and the gateway deliberately have very different powers:
 
 | | scanner | gateway (the AI) |
 |---|---|---|
 | Docker socket | **yes** (needed to list containers and run Trivy/regctl) | **no** |
 | Shell / host access | its own shell script only | **none**: Claude gets only Read/Write/Edit/Glob/Grep in its own workspace |
-| Network | registries, Trivy DB, your notifier | Anthropic API only; no published ports |
+| Network | registries, Trivy DB, your notifier | Anthropic API only; no published ports; reachable only from apps on its `claude` network, with the key |
 | Acts on findings | never | never: it only writes text |
 
 Report text partly comes from outside (image tags, package names), so the AI is treated as
@@ -105,11 +121,12 @@ version checks still track the official image, and the AI suggests rebuilds when
 ## Configuration
 
 All settings are in `.env` (see `.env.example`): schedule, host name, notifiers (`smtp`, `ntfy`,
-`webhook`, `stdout`; several at once), severity, report retention, heartbeat URL, model.
-Jobs are plain Markdown in `jobs/`; edit `jobs/update-review.md` to change how items are sorted
+`webhook`, `stdout`; several at once), severity, report retention, heartbeat URL, gateway address.
+The AI login and model are in `gateway/.env`.
+Jobs are plain Markdown in `gateway/jobs/`; edit `update-review.md` to change how items are sorted
 or the wording of the brief.
 To change only the instruction line your agent reads first, add a `## Brief instructions`
-section to `config/decisions.md` (see the example file); that keeps `git pull` conflict-free.
+section to `gateway/decisions.md` (see the example file); that keeps `git pull` conflict-free.
 
 **Local changes to the containers** (extra networks, storing data elsewhere, reaching a heartbeat
 monitor on another Docker network) go in `compose.override.yaml`, which is git-ignored and picked up
@@ -119,9 +136,7 @@ automatically by `docker compose`. For example:
 services:
   scanner:
     volumes: [/srv/appdata/stackbrief/data:/data]
-    networks: [stackbrief, monitoring]     # e.g. so HEARTBEAT_URL can use http://uptime-kuma:3001/...
-  gateway:
-    volumes: [/srv/appdata/stackbrief/gateway:/data]   # directory owned by uid 1000
+    networks: [gateway, monitoring]        # e.g. so HEARTBEAT_URL can use http://uptime-kuma:3001/...
 networks:
   monitoring: {external: true}
 ```
@@ -137,13 +152,16 @@ networks:
 
 - **The brief has no AI sections, only the plain report:** the line at the top says why. Usually the AI
   login (`ANTHROPIC_API_KEY` / `CLAUDE_CODE_OAUTH_TOKEN`) or `GATEWAY_KEY` (at least 32 characters, same
-  value for both containers). Check `docker compose logs gateway`.
+  value in `.env` and `gateway/.env`), or the scanner can't reach the gateway (`GATEWAY_URL`,
+  `GATEWAY_NETWORK`). Check `docker logs claude`.
 - **The first scan is very slow:** Trivy downloads its database and scans each image once; later runs
   are faster.
 - **Version checks fail for Docker Hub images:** regctl uses anonymous access, so Docker Hub's rate
   limits apply; the scanner retries once. Run the scan at a quiet time, away from big pulls.
 - **Nothing arrives by email:** test delivery with `NOTIFY=stdout`, then check the SMTP settings (TLS is required).
-- **The gateway can't read `decisions.md`:** it runs as a non-root user; `chmod 644 config/decisions.md`.
+- **The gateway can't read `decisions.md`:** it runs as a non-root user; `chmod 644 gateway/decisions.md`.
+- **`network claude declared as external, but could not be found`:** start the gateway first
+  (`cd gateway && docker compose up -d`), or set `GATEWAY_NETWORK` to the network your gateway is on.
 
 ## Releases and contributing
 
